@@ -1,7 +1,7 @@
 """
 This module takes care of starting the API Server, Loading the DB and Adding the endpoints
 """
-import os
+import os  
 from flask import Flask, request, jsonify, url_for
 from flask_cors import CORS
 from utils import APIException, generate_sitemap
@@ -25,18 +25,53 @@ def handle_invalid_usage(error):
 def sitemap():
     return generate_sitemap(app)
 
-@app.route('/members', methods=['GET'])
+
+'''
+DONE  -  /members  GET - return all the jackson_family
+DONE  -  /members  POST - add a family member + return the updated member list
+DONE  -  /members/<int:id>  GET - return the selected member
+/members/<int:id>  DELETE - delete the selected memebr
+'''
+
+# /members  GET - return all the jackson_family
+@app.route('/members/', methods=['GET', 'POST'])
 def handle_hello():
+    response_body = {}
 
-    # this is how you can use the Family datastructure by calling its methods
-    members = jackson_family.get_all_members()
-    response_body = {
-        "hello": "world",
-        "family": members
-    }
+    if request.method == 'GET':
+        members = jackson_family.get_all_members()
+
+        if members:
+            response_body['message'] = 'family member list'
+            response_body['result'] = members
+            return response_body, 200
+
+        response_body['error'] = 'Error: no members list found in DB'
+        return response_body, 500
+    
+    if request.method == 'POST':
+        data = request.json
+        jackson_family.add_member(data)
+        response_body['message'] = 'New member added'
+        response_body['result'] = jackson_family.get_all_members()
+
+        return response_body, 200
 
 
-    return jsonify(response_body), 200
+
+@app.route('/members/<int:id>', methods=['GET'])
+def handle_member(id):
+
+    response_body = {}
+    
+    if request.method == 'GET':
+        response_body['message'] = 'Selected user'
+        response_body['result'] = jackson_family.get_member(id)
+        return response_body, 200
+    
+    response_body['error'] = 'something gose wrong'
+    return response_body, 500
+
 
 # this only runs if `$ python src/app.py` is executed
 if __name__ == '__main__':
